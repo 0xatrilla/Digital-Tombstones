@@ -1,3 +1,4 @@
+#if os(iOS)
 import Foundation
 import Combine
 
@@ -10,6 +11,7 @@ final class KilledViewModel: ObservableObject {
     // Search & Filter
     @Published var searchText: String = ""
     @Published var filter: Filter = .all
+    @Published var selectedYear: String? = nil
     
     enum Filter: String, CaseIterable, Identifiable {
         case all, app, service, hardware
@@ -28,7 +30,7 @@ final class KilledViewModel: ObservableObject {
         let items: [KilledItem]
     }
     
-    var filteredItems: [KilledItem] {
+    private var typeSearchFilteredItems: [KilledItem] {
         var arr = items
         if let match = filter.typeMatch {
             arr = arr.filter { $0.type == match }
@@ -38,6 +40,31 @@ final class KilledViewModel: ObservableObject {
             arr = arr.filter { $0.name.lowercased().contains(q) || $0.description.lowercased().contains(q) }
         }
         return arr
+    }
+    
+    var filteredItems: [KilledItem] {
+        let arr = typeSearchFilteredItems
+        guard let selectedYear else { return arr }
+        return arr.filter { item in
+            if selectedYear == "Unknown" { return item.dateClose == nil }
+            if let d = item.dateClose {
+                let y = Calendar(identifier: .gregorian).component(.year, from: d)
+                return String(y) == selectedYear
+            }
+            return false
+        }
+    }
+    
+    var availableYears: [String] {
+        let cal = Calendar(identifier: .gregorian)
+        let groups = Dictionary(grouping: typeSearchFilteredItems, by: { (item) -> String in
+            if let d = item.dateClose { return String(cal.component(.year, from: d)) }
+            return "Unknown"
+        })
+        let numericYears = groups.keys.compactMap { Int($0) }.sorted(by: >).map { String($0) }
+        var res = numericYears
+        if let unknown = groups["Unknown"], !unknown.isEmpty { res.append("Unknown") }
+        return res
     }
     
     var yearSections: [YearSection] {
@@ -85,3 +112,5 @@ final class KilledViewModel: ObservableObject {
         }
     }
 }
+
+#endif

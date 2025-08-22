@@ -49,6 +49,10 @@ struct KilledRowView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(.white.opacity(0.2))
         )
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Opens detailed view")
     }
     
     private var iconName: String {
@@ -58,6 +62,13 @@ struct KilledRowView: View {
         case .hardware: return "cpu"
         default: return "questionmark"
         }
+    }
+    
+    private var accessibilityLabel: String {
+        var parts: [String] = [item.name]
+        parts.append(item.type.rawValue.capitalized)
+        if let date = item.dateCloseString { parts.append(date) }
+        return parts.joined(separator: ", ")
     }
 }
 

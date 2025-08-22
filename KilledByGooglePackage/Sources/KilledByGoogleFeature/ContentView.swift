@@ -4,32 +4,108 @@ import SwiftUI
 
 public struct ContentView: View {
     @StateObject private var vm = KilledViewModel()
+    @State private var showSettings = false
+    
+    // Layout & density settings (shared enums in SettingsModel)
+    @AppStorage("display.layout") private var layoutRaw: String = DisplayLayout.list.rawValue
+    private var layout: DisplayLayout {
+        get { DisplayLayout(rawValue: layoutRaw) ?? .list }
+        set { layoutRaw = newValue.rawValue }
+    }
+    @AppStorage("display.gridDensity") private var densityRaw: String = GridDensity.comfortable.rawValue
+    private var density: GridDensity {
+        get { GridDensity(rawValue: densityRaw) ?? .comfortable }
+        set { densityRaw = newValue.rawValue }
+    }
+    @AppStorage("display.fontChoice") private var fontRaw: String = FontChoice.system.rawValue
+    private var fontChoice: FontChoice { FontChoice(rawValue: fontRaw) ?? .system }
+    private var layoutBinding: Binding<DisplayLayout> {
+        Binding(
+            get: { DisplayLayout(rawValue: layoutRaw) ?? .list },
+            set: { layoutRaw = $0.rawValue }
+        )
+    }
+    private var densityBinding: Binding<GridDensity> {
+        Binding(
+            get: { GridDensity(rawValue: densityRaw) ?? .comfortable },
+            set: { densityRaw = $0.rawValue }
+        )
+    }
     
     public init() {}
     
     public var body: some View {
         NavigationStack {
             ZStack {
-                LiquidBackground()
+                AppBackgroundView()
                 content
             }
             .navigationTitle("Killed by Google")
+            .searchable(text: $vm.searchText, prompt: "Search products")
+            // Large title for consistency with list; chips removed
+            // (Year filter moved into Filter menu)
+            .optionalFontDesign(fontChoice.design)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if vm.isLoading {
-                        ProgressView()
-                            .tint(.primary)
-                    } else {
-                        Button {
-                            Task { await vm.load() }
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Picker("Type", selection: $vm.filter) {
+                            ForEach(KilledViewModel.Filter.allCases) { f in
+                                Text(f.title).tag(f)
+                            }
                         }
+                        Divider()
+                        Picker("Year", selection: Binding<String>(
+                            get: { vm.selectedYear ?? "All" },
+                            set: { vm.selectedYear = ($0 == "All" ? nil : $0) }
+                        )) {
+                            Text("All").tag("All")
+                            ForEach(vm.availableYears, id: \.self) { y in
+                                Text(y).tag(y)
+                            }
+                        }
+                        Divider()
+                        Button {
+                            vm.filter = .all
+                            vm.selectedYear = nil
+                            vm.searchText = ""
+                        } label: {
+                            Label("Clear Filters", systemImage: "xmark.circle")
+                        }
+                    } label: {
+                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("Layout", selection: layoutBinding) {
+                            ForEach(DisplayLayout.allCases) { l in
+                                Label(l.title, systemImage: l.icon).tag(l)
+                            }
+                        }
+                        Divider()
+                        Picker("Density", selection: densityBinding) {
+                            ForEach(GridDensity.allCases) { d in
+                                Label(d.title, systemImage: d.icon).tag(d)
+                            }
+                        }
+                    } label: {
+                        Label("Layout", systemImage: layout.icon)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Settings")
                 }
             }
         }
         .task { await vm.load() }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
     }
     
     @ViewBuilder
@@ -46,23 +122,68 @@ public struct ContentView: View {
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .padding()
         } else {
-            List {
-                ForEach(vm.items) { item in
-                    NavigationLink {
-                        KilledDetailView(item: item)
-                    } label: {
-                        KilledRowView(item: item)
-                            .listRowSeparator(.hidden)
+            Group {
+                if layout == .list {
+                    List {
+                        ForEach(vm.yearSections) { section in
+                            Section {
+                                ForEach(section.items) { item in
+                                    NavigationLink {
+                                        KilledDetailView(item: item)
+                                    } label: {
+                                        KilledRowView(item: item)
+                                            .listRowSeparator(.hidden)
+                                    }
+                                    .listRowBackground(Color.clear)
+                                }
+                            } header: {
+                                Text(section.title)
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .headerProminence(.increased)
+                        }
                     }
-                    .listRowBackground(Color.clear)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .refreshable { await vm.load() }
+                } else {
+                    GeometryReader { proxy in
+                        let columns = gridColumns(for: proxy.size.width)
+                        ScrollView {
+                            LazyVGrid(columns: columns, spacing: 16) {
+                                ForEach(vm.filteredItems) { item in
+                                    NavigationLink {
+                                        KilledDetailView(item: item)
+                                    } label: {
+                                        KilledGridCardView(item: item)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .tint(.primary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                    }
+                    .refreshable { await vm.load() }
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .refreshable {
-                await vm.load()
-            }
         }
+    }
+    
+    // Grid sizing: guarantee a true grid with at least 2 columns on phones; varies by density
+    fileprivate func gridColumns(for width: CGFloat) -> [GridItem] {
+        let horizontalPadding: CGFloat = 32 // 16 + 16
+        let spacing: CGFloat = {
+            switch density { case .dense: return 12; case .comfortable: return 16; case .spacious: return 20 }
+        }()
+        let targetWidth: CGFloat = {
+            switch density { case .dense: return 150; case .comfortable: return 170; case .spacious: return 200 }
+        }()
+        let available = max(0, width - horizontalPadding)
+        let count = max(2, Int((available + spacing) / (targetWidth + spacing)))
+        return Array(repeating: GridItem(.flexible(), spacing: spacing, alignment: .top), count: count)
     }
 }
 
@@ -71,5 +192,7 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+// Year chips removed; filters live in the Filter menu.
 
 #endif
