@@ -1,6 +1,6 @@
 import Foundation
 
-public struct KilledItem: Identifiable, Codable, Equatable {
+public struct KilledItem: Identifiable, Codable, Equatable, Sendable {
     public let name: String
     public let dateOpen: Date?
     public let dateClose: Date?
@@ -8,7 +8,7 @@ public struct KilledItem: Identifiable, Codable, Equatable {
     public let description: String
     public let type: ItemType
     
-    public enum ItemType: String, Codable, CaseIterable {
+    public enum ItemType: String, Codable, CaseIterable, Sendable {
         case app
         case service
         case hardware

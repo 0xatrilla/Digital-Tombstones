@@ -1,8 +1,10 @@
 #if os(iOS)
 import SwiftUI
+import UIKit
 
 struct KilledGridCardView: View {
     let item: KilledItem
+    @EnvironmentObject private var favorites: FavoritesStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -16,10 +18,18 @@ struct KilledGridCardView: View {
                         .foregroundStyle(.primary)
                 }
                 Spacer()
-                if let close = item.dateCloseString {
-                    Text(close)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    if let close = item.dateCloseString {
+                        Text(close)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    if favorites.isFavorite(item.id) {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.yellow)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
 
@@ -55,6 +65,26 @@ struct KilledGridCardView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Opens detailed view")
+        .contextMenu {
+            let isFav = favorites.isFavorite(item.id)
+            Button {
+                let added = favorites.toggle(item.id)
+                added ? Haptics.success() : Haptics.light()
+            } label: {
+                Label(isFav ? "Remove from Favorites" : "Add to Favorites", systemImage: isFav ? "star.slash" : "star")
+            }
+            if let url = item.link {
+                ShareLink(item: url) {
+                    Label("Share Link", systemImage: "square.and.arrow.up")
+                }
+                Button {
+                    UIPasteboard.general.string = url.absoluteString
+                    Haptics.light()
+                } label: {
+                    Label("Copy Link", systemImage: "doc.on.doc")
+                }
+            }
+        }
     }
 
     private var iconName: String {

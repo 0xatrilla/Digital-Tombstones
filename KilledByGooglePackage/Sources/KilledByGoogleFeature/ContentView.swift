@@ -4,6 +4,7 @@ import SwiftUI
 
 public struct ContentView: View {
     @StateObject private var vm = KilledViewModel()
+    @StateObject private var favorites = FavoritesStore()
     @State private var showSettings = false
     
     // Layout & density settings (shared enums in SettingsModel)
@@ -31,6 +32,7 @@ public struct ContentView: View {
             set: { densityRaw = $0.rawValue }
         )
     }
+    @AppStorage("filter.favoritesOnly") private var favoritesOnly: Bool = false
     
     public init() {}
     
@@ -48,6 +50,8 @@ public struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        Toggle("Favorites only", isOn: $favoritesOnly)
+                        Divider()
                         Picker("Type", selection: $vm.filter) {
                             ForEach(KilledViewModel.Filter.allCases) { f in
                                 Text(f.title).tag(f)
@@ -68,6 +72,7 @@ public struct ContentView: View {
                             vm.filter = .all
                             vm.selectedYear = nil
                             vm.searchText = ""
+                            favoritesOnly = false
                         } label: {
                             Label("Clear Filters", systemImage: "xmark.circle")
                         }
@@ -106,6 +111,7 @@ public struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+        .environmentObject(favorites)
     }
     
     @ViewBuilder
@@ -125,7 +131,7 @@ public struct ContentView: View {
             Group {
                 if layout == .list {
                     List {
-                        ForEach(vm.yearSections) { section in
+                        ForEach(displaySections) { section in
                             Section {
                                 ForEach(section.items) { item in
                                     NavigationLink {
@@ -135,6 +141,16 @@ public struct ContentView: View {
                                             .listRowSeparator(.hidden)
                                     }
                                     .listRowBackground(Color.clear)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        let isFav = favorites.isFavorite(item.id)
+                                        Button {
+                                            let added = favorites.toggle(item.id)
+                                            added ? Haptics.success() : Haptics.light()
+                                        } label: {
+                                            Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
+                                        }
+                                        .tint(.yellow)
+                                    }
                                 }
                             } header: {
                                 Text(section.title)
@@ -152,7 +168,7 @@ public struct ContentView: View {
                         let columns = gridColumns(for: proxy.size.width)
                         ScrollView {
                             LazyVGrid(columns: columns, spacing: 16) {
-                                ForEach(vm.filteredItems) { item in
+                                ForEach(gridItems) { item in
                                     NavigationLink {
                                         KilledDetailView(item: item)
                                     } label: {
@@ -184,6 +200,20 @@ public struct ContentView: View {
         let available = max(0, width - horizontalPadding)
         let count = max(2, Int((available + spacing) / (targetWidth + spacing)))
         return Array(repeating: GridItem(.flexible(), spacing: spacing, alignment: .top), count: count)
+    }
+
+    private var displaySections: [KilledViewModel.YearSection] {
+        guard favoritesOnly else { return vm.yearSections }
+        let favFiltered = vm.yearSections.compactMap { section -> KilledViewModel.YearSection? in
+            let items = section.items.filter { favorites.isFavorite($0.id) }
+            return items.isEmpty ? nil : .init(id: section.id, title: section.title, items: items)
+        }
+        return favFiltered
+    }
+
+    private var gridItems: [KilledItem] {
+        let base = vm.filteredItems
+        return favoritesOnly ? base.filter { favorites.isFavorite($0.id) } : base
     }
 }
 
