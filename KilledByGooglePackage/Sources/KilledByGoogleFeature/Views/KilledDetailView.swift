@@ -4,6 +4,7 @@ import SwiftUI
 struct KilledDetailView: View {
     let item: KilledItem
     @Environment(\.openURL) private var openURL
+    @AppStorage("display.fontChoice") private var fontRaw: String = FontChoice.system.rawValue
     
     var body: some View {
         ScrollView {
@@ -30,7 +31,9 @@ struct KilledDetailView: View {
             )
             .padding()
         }
-        .background(LiquidBackground())
+        .background(AppBackgroundView())
+        .optionalFontDesign(FontChoice(rawValue: fontRaw)?.design)
+        .tint(.primary)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
     }
