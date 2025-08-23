@@ -1,4 +1,4 @@
-# KilledByGoogle - iOS App
+# Digital Tombstones - iOS App
 
 A modern iOS application that showcases Google's discontinued products and services. Built with SwiftUI and targeting iOS 26+, this app provides an elegant way to browse the "Google Graveyard" - products that were killed by Google over the years.
 
