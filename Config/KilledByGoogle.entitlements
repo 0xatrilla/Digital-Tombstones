@@ -3,7 +3,6 @@
 <plist version="1.0">
 <dict>
 	<!-- Base entitlements - add your app's entitlements here -->
-	<!-- AI agents can safely modify this file to add capabilities -->
 	
 	<!-- Example entitlements (commented out by default):
 	

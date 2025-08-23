@@ -30,5 +30,5 @@ INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationLand
 // ==========================================
 // Entitlements
 // ==========================================
-// AI agents can modify Config/KilledByGoogle.entitlements to add capabilities
 CODE_SIGN_ENTITLEMENTS = Config/KilledByGoogle.entitlements
+
