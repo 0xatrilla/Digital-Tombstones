@@ -20,6 +20,8 @@ public struct ContentView: View {
     }
     @AppStorage("display.fontChoice") private var fontRaw: String = FontChoice.system.rawValue
     private var fontChoice: FontChoice { FontChoice(rawValue: fontRaw) ?? .system }
+    @AppStorage("display.backgroundStyle") private var bgRaw: String = BackgroundStyle.liquid.rawValue
+    private var backgroundStyle: BackgroundStyle { BackgroundStyle(rawValue: bgRaw) ?? .liquid }
     private var layoutBinding: Binding<DisplayLayout> {
         Binding(
             get: { DisplayLayout(rawValue: layoutRaw) ?? .list },
@@ -47,6 +49,7 @@ public struct ContentView: View {
             // Large title for consistency with list; chips removed
             // (Year filter moved into Filter menu)
             .optionalFontDesign(fontChoice.design)
+            .tint(backgroundStyle.tint)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
@@ -177,7 +180,6 @@ public struct ContentView: View {
                                     .buttonStyle(.plain)
                                 }
                             }
-                            .tint(.primary)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
                         }

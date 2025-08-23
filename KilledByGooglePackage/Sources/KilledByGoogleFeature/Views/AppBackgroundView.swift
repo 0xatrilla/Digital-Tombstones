@@ -26,6 +26,14 @@ public struct AppBackgroundView: View {
                     .pink.opacity(0.30),
                     .purple.opacity(0.35)
                 ])
+            case .google:
+                // Google brand colors: Blue, Red, Yellow, Green
+                gradientBackground(colors: [
+                    Color(red: 0.2588, green: 0.5216, blue: 0.9569).opacity(0.35), // #4285F4
+                    Color(red: 0.9176, green: 0.2627, blue: 0.2078).opacity(0.30), // #EA4335
+                    Color(red: 0.9843, green: 0.7373, blue: 0.0196).opacity(0.30), // #FBBC05
+                    Color(red: 0.2039, green: 0.6588, blue: 0.3255).opacity(0.35)  // #34A853
+                ])
             case .solidAuto:
                 Color(.systemBackground).ignoresSafeArea()
             }
@@ -57,3 +65,4 @@ public struct AppBackgroundView: View {
     AppBackgroundView()
 }
 #endif
+

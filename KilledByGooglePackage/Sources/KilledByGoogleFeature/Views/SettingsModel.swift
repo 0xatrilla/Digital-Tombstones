@@ -5,6 +5,7 @@ public enum BackgroundStyle: String, CaseIterable, Identifiable {
     case liquid
     case ocean
     case sunset
+    case google
     case solidAuto
     
     public var id: String { rawValue }
@@ -13,7 +14,26 @@ public enum BackgroundStyle: String, CaseIterable, Identifiable {
         case .liquid: return "Liquid Gradient"
         case .ocean: return "Ocean Gradient"
         case .sunset: return "Sunset Gradient"
+        case .google: return "Google"
         case .solidAuto: return "Solid (Auto)"
+        }
+    }
+}
+
+public extension BackgroundStyle {
+    var tint: Color {
+        switch self {
+        case .liquid:
+            return .indigo
+        case .ocean:
+            return .teal
+        case .sunset:
+            return .orange
+        case .google:
+            // Google blue #4285F4
+            return Color(red: 0.2588, green: 0.5216, blue: 0.9569)
+        case .solidAuto:
+            return .blue
         }
     }
 }

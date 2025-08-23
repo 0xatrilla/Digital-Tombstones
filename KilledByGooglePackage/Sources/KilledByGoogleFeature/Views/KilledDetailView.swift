@@ -33,7 +33,6 @@ struct KilledDetailView: View {
         }
         .background(AppBackgroundView())
         .optionalFontDesign(FontChoice(rawValue: fontRaw)?.design)
-        .tint(.primary)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
     }
