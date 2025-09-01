@@ -36,6 +36,21 @@ public extension BackgroundStyle {
             return .blue
         }
     }
+    
+    /// Get the appropriate material based on iOS version
+    @available(iOS 18.0, *)
+    var compatibleMaterial: Material {
+        switch self {
+        case .liquid, .ocean, .sunset, .google:
+            if #available(iOS 26.0, *) {
+                return .ultraThinMaterial
+            } else {
+                return .thinMaterial
+            }
+        case .solidAuto:
+            return .regularMaterial
+        }
+    }
 }
 
 public enum FontChoice: String, CaseIterable, Identifiable {

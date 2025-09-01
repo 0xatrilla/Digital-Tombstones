@@ -1,5 +1,10 @@
 import Foundation
 
+// Conditional import for FoundationNetworking compatibility
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 public enum KilledServiceError: Error, LocalizedError {
     case invalidResponse
     case decodingFailed
