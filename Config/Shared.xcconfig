@@ -23,7 +23,8 @@ TARGETED_DEVICE_FAMILY = 1,2
 // ==========================================
 // Info PLIST
 // ==========================================
-GENERATE_INFOPLIST_FILE = YES
+GENERATE_INFOPLIST_FILE = NO
+INFOPLIST_FILE = KilledByGoogle/Info.plist
 INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationLandscapeRight UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationPortrait
 INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationLandscapeRight UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
 
